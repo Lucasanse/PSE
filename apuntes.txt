@@ -1,0 +1,46 @@
+Para el 12/04:
+    Tenes que apretar el boton, que se prenda y apretar el boton y que se apague
+    cada vez que se prende un led controlar de que el sistema este prendido
+        hace un modulo que checkee el estado del boton para invocarlo cada vez que tocamos un led
+        hace una variable global para el estado
+
+
+---------- 05/04
+temas de hoy:
+    como calibrar dalay en un micro
+        1)  hacer un for contando los i, intentar tomar cuantas i toma en 1 segundo
+            despues hacer un while donde bucleamos esos for, ponele que hacer un while(60) de ese for
+        2) reloj p/frecuencia del mcu, tics del reloj 16Mhz
+            nuesto micro ejecuta 16 millones de instrucciones x segundo 
+            avr_objdump nos permite saber informacion del compilador
+                nos puede decir cuantas instrucciones maquina nos lleva ese for 
+
+        3) osciloscopio 
+             vemos la señales en alto y bajo, podemos medir el tiempo que esta en alto  
+                en el ejemplo del led el for nos indica el tiempo en alto. 
+            1s - 1000ms -1000000us
+                hacer delay_ms()
+
+PARA HACER EL SERIAL
+
+
+
+
+
+screen /dev/ttyUSB0 2400 (EN TERMINAL COMUN)
+
+para salir: ctrl A y despues : quit
+
+SERIE: ANDA MAL EL ULTRASONIDO
+
+
+PERILLA ANALOGICA
+
+si la miras de frente tenes el gnd, la señal analogica y el vcc
+
+
+Respuesta de los ejercicios concurrentes:
+    1) mas intuitivo: el 2 
+    2) facil de recordar: el 2
+    3) el mas legible: el 2  
+
