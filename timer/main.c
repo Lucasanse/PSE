@@ -3,10 +3,6 @@
 #include "adc.h"
 #include <avr/interrupt.h>
 
-volatile unsigned char * DDR_B = (unsigned char *) 0x24;
-volatile unsigned char * PUERTO_B = (unsigned char *) 0X25;
-volatile unsigned char * PIN_B= (unsigned char *) 0X23;
-
 void sleep_ms(unsigned int tiempo)
 {
     volatile long i;
@@ -20,7 +16,6 @@ void sleep_ms(unsigned int tiempo)
 /*El servo se conecta en el pin D9*/
 void main()
 {
-  *(DDR_B)=0b00100110;
   timer1_init();
   serial_init(); 
   adc_init();

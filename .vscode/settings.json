@@ -2,7 +2,8 @@
     "files.associations": {
         "sleeps.h": "c",
         "serial.h": "c",
-        "hmc5883l.h": "c"
+        "hmc5883l.h": "c",
+        "xinu.h": "c"
     },
     "C_Cpp.errorSquiggles": "enabled"
 }

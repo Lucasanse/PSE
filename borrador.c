@@ -1,65 +1,131 @@
 /**********************************************************************
  *
- * adc.c - Driver del ADC del atmega328p
+ * timer1.c - Driver del TIMER 1 (16 bits) del atmega328p
  *
- * META : ocultar el hardware a la aplicacion 
+ * META : ocultar el hardware a la aplicacion
  *
  **********************************************************************/
 
-#include <stdint.h> /* para los tipos de datos. Ej.: uint8_t */
-#include "adc.h"
+#include <stdint.h>
+#include <avr/interrupt.h>
 
-/* Estructura de datos del driver ADC */
+/* Macros para la configuracion de los registros de control */
+#define CONF_CONTROL_REG_A_FPWM 0b10000010; // [COM1A1|COM1A2]  clear on match  - [WGM11|WGM10]         fast PWM
+#define CONF_CONTROL_REG_B_FPWM 0b00011010; // [WGM13|WGM12]    fast PWM        - [CS02|CS01|CS00]      preescale 8
+#define CONF_CONTROL_REG_C_FPWM 0b00000000; //
 
+/********************** Calculos de valores ***************************
+ *
+ * f_cpu/prescalar = 16000000/8 = 500000 t/s
+ * FREQ: 500000 t/s * 0.020  = 10000 = 0x2710 
+ * MIN:  500000 t/s * 0.001  = 500  = 0x01f4
+ * MAX:  500000 t/s * 0.002  = 1000  = 0x03e8
+ * 500000 t/s * 0.0025  = 12500  = 0x1194
+ **********************************************************************/
+
+/********************** Calculos de valores ***************************
+ *
+ * f_cpu/prescalar = 4000000/8 = 2000000 t/s
+ * FREQ: 2000000 t/s * 0.020  = 39999 = 0x9c3f
+ * MIN:  2000000 t/s * 0.001  = 2000  = 0x07d0
+ * MAX:  2000000 t/s * 0.002  = 3999  = 0x0f9f
+ * 2000000 t/s * 0.0025  = 3999  = 0x1194
+ **********************************************************************/
+
+/* Macros de valores */
+#define MIN_PWM_8P 500
+#define MAX_PWM_8P_CERVO 1000
+#define MAX_PWM_8P_MOTOR 0x2710
+#define TIMER1_FREQ_H 0x27
+#define TIMER1_FREQ_L 0x10
+#define TIMER1_0CR1AH_POS 0x03
+#define TIMER1_0CR1AL_POS 0xe8
+
+/* Estructura de datos del driver TIMER */
 typedef struct
 {
-        uint8_t adcl;               /* ADC Data Register Low */
-        uint8_t adch;
-        uint8_t adcsra;         /* ADC Control and Status Register A */
-        uint8_t adcsrb;
-        uint8_t admux;                 /* ADC Multiplexer Selection Register */
-        uint8_t reserved;
-        uint8_t didr0; 
+        uint8_t control_reg_a;      // TCC1RA
+        uint8_t control_reg_b;      // TCC1RB
+        uint8_t control_reg_c;      // TCC1RC
+        uint8_t _reserved;          //
+        uint8_t counter_reg_l;      // TCNT1L
+        uint8_t counter_reg_h;      // TCNT1H
+        uint8_t in_capture_regl;    // ICR1L
+        uint8_t in_capture_regh;    // ICR1H
+        uint8_t out_compare_reg_al; // OCR1AL
+        uint8_t out_compare_reg_ah; // OCR1AH
+        uint8_t out_compare_reg_bl; // OCR1BL
+        uint8_t out_compare_reg_bh; // OCR1BH
+} volatile timer1_t;
+volatile timer1_t *timer = (timer1_t *)0x80; // Direccion base
 
-} volatile adc_t;
+volatile uint8_t *timer_interrupt_mask_reg = (uint8_t *)0x6f; // TIMSK
+volatile uint8_t *timer_interrupt_flag_reg = (uint8_t *)0x36; // TIFR1 (no se si sirve de algo)
 
-volatile adc_t *adc = (adc_t *)(0x78); /* direccion del primer registro */
+volatile int ticks;
 
-
-void adc_init()
+int timer1_init()
 {
-        /* Configurar los registros ADMUX y ADCSRA para utilizar el voltaje
-        de vcc con capacitor externo y encender (habilitar) el periferico */
+        /* setear la configuracion del timer1  */
+        timer->control_reg_a |= CONF_CONTROL_REG_A_FPWM;
+        timer->control_reg_b |= CONF_CONTROL_REG_B_FPWM;
+        timer->control_reg_c |= CONF_CONTROL_REG_C_FPWM;
 
-        adc -> admux = (unsigned char) 0b01000000; //periferico adc0
-        
-        
-        /* Establecer tambien el prescalar para lograr un valor acorde (divisor) */
-        adc -> adcsra = (unsigned char) 0b00000100; //16 bits
+        /* determinar la frecuencia con el registro ICR  */
+        timer->in_capture_regh = TIMER1_FREQ_H;
+        timer->in_capture_regl = TIMER1_FREQ_L;
+
+        /* determinamos el ancho de la senial en alto en cada ciclo con el registro OCR1A */
+        timer->out_compare_reg_ah = 0;
+        timer->out_compare_reg_al = 0;
+
+        timer->out_compare_reg_bh = 0;
+        timer->out_compare_reg_bl = 0;
+        /* reiniciamos los registros del contador (por las dudas) */
+        timer->counter_reg_l = 0;
+        timer->counter_reg_h = 0;
+        return 0;
 }
 
-int adc_get(char input)
+/**
+ * GRADE: para posicionar el servo (min 0 y max 180)
+ */
+int timer1_cervo(int grade)
 {
-        int val, high, low;
+        long int init_value, temp;
+        uint8_t low, high;
 
-        /* 1. Selects which analog input is connected to the ADC */
-        adc -> admux = (adc -> admux & 0b11110000) | input; 
+        // if (grade < 0 || grade > 180)
+        //         return 1;
 
-        /* 2. Write this bit to one to start each conversion */
+        init_value = grade * 100 / 180;
+        temp = MIN_PWM_8P + (MAX_PWM_8P_CERVO - MIN_PWM_8P) / 100 * init_value;
+        high = (temp >> 8);
+        low = temp;
 
-        adc -> adcsra = adc -> adcsra | 0b01000000; 
-        
-        /* 3. When conversion is complete, it returns to zero */
+        /* determinamos el ancho de la senial en alto en cada ciclo con el registro OCR1A */
+        timer->out_compare_reg_bh = high;
+        timer->out_compare_reg_bl = low;
 
-        while (!((adc-> adcsra) & (0b01000000)));
+        return 0;
+}
 
-        /* 4. When conversion is complete, the result is found in these registers */
+int timer1_motor(int speed)
+{
+    long int init_value, temp;
+        uint8_t low, high;
 
-        /* IMPORTANT: ADCL must be read first, then ADCH */
+        // if (grade < 0 || grade > 180)
+        //         return 1;
 
-        low = adc -> adcl;
-        high = adc -> adch; 
-        val =  high * (2 ^ 8) + low;
+        init_value = ((speed*(MAX_PWM_8P_MOTOR/10)));
+        //temp = MIN_PWM_8P + (MAX_PWM_8P_MOTOR - MIN_PWM_8P) / 100 * init_value;
+        high = (init_value >> 8);
+        low = init_value;
 
-        return val;        
+        /* determinamos el ancho de la senial en alto en cada ciclo con el registro OCR1A */
+        timer->out_compare_reg_ah = high;
+        timer->out_compare_reg_al = low;
+
+        return 0;
 }

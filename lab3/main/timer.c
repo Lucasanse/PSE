@@ -1,6 +1,6 @@
-
 #include <avr/interrupt.h>
 #include <avr/io.h>
+#include "globales.h"
 
 typedef struct
 {
@@ -19,12 +19,8 @@ volatile timer1_t *timer1 = (timer1_t *)(0x80);
 // registro mascara de interrupciones timer 1
 volatile uint8_t *timer1_timsk = (uint8_t *)(0x6F);
 
-volatile unsigned char* DDR_B = (unsigned char*) 0x24;
-
 void timer1_init()
 {
-    // hacemos el puerto D9 de salida (el predilecto para ocr1a)
-    *DDR_B |= (1 << 1);
     // modo de comparacion para Fast PWM.
     timer1->tccr1a |= (1 << 7) | (1 << 5);
     // modo Fast PWM con top en icr1 (el modo 14) 1110. 
@@ -35,6 +31,9 @@ void timer1_init()
     timer1->tccr1b |= (1 << 1);
     // ICR1 seteamos el tope para que sea en los 20ms
     timer1->icr1 = 10000; 
+    // hacemos el puerto D9 de salida (el predilecto para ocr1a)
+    *DDR_B |= (1 << 1);
+    *DDR_B |= (1 << 2);
 
 }
 

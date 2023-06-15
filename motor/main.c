@@ -25,14 +25,35 @@ void main()
   serial_init(); 
   adc_init();
 
-  int velocidad_inicial = 4000;
-  int val;
+  unsigned int velocidad_inicial = 920;
+  unsigned int val;
+  volatile long i;
   
   while(1){
      /* determinamos la velocidad y direccion*/
-    val =  velocidad_inicial - ((adc_get(2)/150)*200); /* obtener una conversión ADC del pin de entrada ADC 2 */
+    //val =  velocidad_inicial - ((adc_get(2)/150)*20); /* obtener una conversión ADC del pin de entrada ADC 2 */
+    val = 0;
     velocidad(val);
-    sleep_ms(1000);
+    for(i = 0; i < 180000; i++){}
+    val = 30;
+    velocidad(val);
+    for(i = 0; i < 180000; i++){}
+    val = 60;
+    velocidad(val);
+    for(i = 0; i < 180000; i++){}
+    val = 90;
+    velocidad(val);
+    for(i = 0; i < 180000; i++){}
+    val = 120;
+    velocidad(val);
+    for(i = 0; i < 180000; i++){}
+    val = 150;
+    velocidad(val);
+    for(i = 0; i < 180000; i++){}
+    val = 180;
+    velocidad(val);
+    for(i = 0; i < 180000; i++){}
+    //sleep_ms(1000);
   }
   for(;;);
 }
@@ -40,7 +61,7 @@ void main()
 void velocidad(int vel){
     serial_put_string("\n\r servo a velocidad: ");
     serial_put_int(vel,4);
-    timer1_rotacion_servo(vel);
+    timer1_fijar_angulo(vel);
     sleep_ms(1000);
 }
 

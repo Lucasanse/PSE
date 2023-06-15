@@ -76,6 +76,7 @@ ISR(TIMER0_COMPA_vect)
 			}
 		} 
 	ticks = 0;
+
    }
 }
 
