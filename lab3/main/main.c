@@ -5,7 +5,7 @@
 #include "timer.h"
 
 extern int led_testigo(void);
-extern int entrada(void);
+extern int controlador(void);
 extern int controlar_motor(void);
 extern int controlar_servo(void);
 
@@ -16,9 +16,9 @@ int main(void)
 	timer1_init();
 
 	resume(create(led_testigo, 64, 20, "led", 0));
-	resume(create(controlar_servo, 128, 20, "servo", 0));
+	resume(create(controlar_servo, 64, 20, "servo", 0));
 	resume(create(controlar_motor, 64, 20, "motor", 0));
-	resume(create(entrada, 64, 20, "entrada", 0));
+	resume(create(controlador, 128, 20, "entrada", 0));
 	
 	while (1){
 		segundos ++;
@@ -28,8 +28,13 @@ int main(void)
 		serial_put_char(':');
 		serial_put_int((segundos % 3600) % 60, 2);
 		serial_put_str(".  Velocidad: ");
-		serial_put_int(motor_encendido ? vel_motor : 0, 3);
-		serial_put_str(". servo: ");
+		if(motor_encendido){
+			serial_put_int(vel_motor,3);
+		}
+		else{
+			serial_put_int(0,3);
+		}
+		serial_put_str("%. servo: ");
 		serial_put_int(angulo_servo, 3);
 		serial_put_str(" grados.\n\r");
 		sleep(1);

@@ -4,8 +4,8 @@
 extern volatile unsigned char * DDR_B;
 extern volatile unsigned char * PUERTO_B;
 extern volatile unsigned char * PIN_B;
-int angulo_servo;
-int vel_motor;
-unsigned char motor_encendido;
-unsigned int segundos;
+extern int angulo_servo;
+extern int vel_motor;
+extern unsigned char motor_encendido;
+extern unsigned int segundos;
 #endif

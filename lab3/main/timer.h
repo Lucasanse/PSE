@@ -3,6 +3,6 @@
 
 void timer1_init(void);
 void timer1_rotacion_servo(int num);
-void set_timer1_ocr1b_dutycycle(int val);
+void timer1_motor(volatile int val);
 
 #endif /* _TIMER1_H */

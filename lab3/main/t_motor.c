@@ -6,14 +6,18 @@
 int controlar_motor(void)
 {
 	while(1) {
+		volatile int vel;
 		if(motor_encendido) {
+			//valores de 0 a 100
 			vel_motor = (adc_get(2) / 35);
 			if(vel_motor > 100){
 				vel_motor=100;
+				vel = 0;
 			}
-			set_timer1_ocr1b_dutycycle(vel_motor);
+			vel = 100 - vel_motor;
+			timer1_motor(vel);
 		} else {
-			set_timer1_ocr1b_dutycycle(0);
+			timer1_motor(100);
 		}
 
 		sleepms(50);

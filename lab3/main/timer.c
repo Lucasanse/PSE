@@ -30,7 +30,7 @@ void timer1_init()
     /*con el preescalar 8 hace 10000 ticks en 20 ms, 500 en 1ms y 1000 en 2ms*/
     timer1->tccr1b |= (1 << 1);
     // ICR1 seteamos el tope para que sea en los 20ms
-    timer1->icr1 = 10000; 
+    timer1->icr1 = 9900; 
     // hacemos el puerto D9 de salida (el predilecto para ocr1a)
     *DDR_B |= (1 << 1);
     *DDR_B |= (1 << 2);
@@ -38,18 +38,19 @@ void timer1_init()
 }
 
 void timer1_rotacion_servo(int num){
+    //usamos ocr1a = D9
     timer1->ocr1a = num;
 }
 
-set_timer1_ocr1b_dutycycle(int val) {
-    int duty_cycle = 0;
+void timer1_motor(volatile int val) {
+    //usamos ocr1b = D10
+    volatile int tope = 0;
     if(val == 100) {
-        duty_cycle = timer1->icr1;
+        tope = timer1->icr1;
     } else if (val != 0) {
-        duty_cycle = timer1->icr1 / 100;
-        duty_cycle = val * duty_cycle;
-    } else if (val < 2) {
-        duty_cycle = 0;
+        tope = timer1->icr1 / 100;
+        tope = val * tope;
     }
-    timer1->ocr1b = duty_cycle;
+    timer1->ocr1b = tope;
 }
+

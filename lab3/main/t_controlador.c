@@ -2,8 +2,7 @@
 #include "serial.h"
 #include "globales.h"
 
-int entrada(void)
-{
+int controlador(void){
 	unsigned char rsvchar;
 	while (1)
 	{
@@ -13,7 +12,6 @@ int entrada(void)
 		{
 			motor_encendido = 0;
 		}
-		
 		if (rsvchar == 'n')
 		{
 			motor_encendido = 1;
@@ -21,14 +19,14 @@ int entrada(void)
 		if (rsvchar == 'a')
 		{
 			angulo_servo -= 5;
-			if (angulo_servo < 1){
+			if (angulo_servo < 0){
 				angulo_servo = 0;
 			}
 		}
 		if (rsvchar == 'd')
 		{
 			angulo_servo += 5;
-			if (angulo_servo >= 180){
+			if (angulo_servo > 180){
 				angulo_servo = 180;
 			}
 		}
